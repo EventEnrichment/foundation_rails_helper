@@ -93,12 +93,14 @@ module FoundationRailsHelper
       options ||= {}
       options[:class] ||= ""
       options[:class] += " error" if has_error?(attribute)
-      label(attribute, text, options)
+      html = label(attribute, text, options)
+      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
+      html
     end
 
     def error_and_hint(attribute, options = {})
       html = ""
-      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
+#      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
       html += error_for(attribute, options) || ""
       html.html_safe
     end
