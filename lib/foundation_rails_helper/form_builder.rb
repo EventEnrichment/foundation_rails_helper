@@ -53,7 +53,7 @@ module FoundationRailsHelper
     end
 
     def select(attribute, choices, options = {}, html_options = {})
-      field attribute, options do |options|
+      field attribute, html_options do |html_options|
         html_options[:autocomplete] ||= :off
         super(attribute, choices, options, html_options)
       end
@@ -93,12 +93,14 @@ module FoundationRailsHelper
       options ||= {}
       options[:class] ||= ""
       options[:class] += " error" if has_error?(attribute)
-      label(attribute, text, options)
+      html = label(attribute, text, options)
+      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
+      html
     end
 
     def error_and_hint(attribute, options = {})
       html = ""
-      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
+#      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
       html += error_for(attribute, options) || ""
       html.html_safe
     end
@@ -106,8 +108,7 @@ module FoundationRailsHelper
     def field(attribute, options, &block)
       html = ''.html_safe
       html = custom_label(attribute, options[:label], options[:label_options]) if false != options[:label]
-      options[:class] ||= "medium"
-      options[:class] = "#{options[:class]} input-text"
+      options[:class] ||= ""
       options[:class] += " error" if has_error?(attribute)
       options.delete(:label)
       options.delete(:label_options)
