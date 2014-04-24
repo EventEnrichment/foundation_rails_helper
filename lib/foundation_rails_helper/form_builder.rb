@@ -14,11 +14,12 @@ module FoundationRailsHelper
     end
 
     def check_box(attribute, options = {}, checked_value = "1", unchecked_value = "0")
-      custom_label(attribute, options[:label], options[:label_options]) do
-        options.delete(:label)
-        options.delete(:label_options)
-        super(attribute, options, checked_value, unchecked_value)
-      end + error_and_hint(attribute, options)
+#      Rails.logger.info("check_box attribute: #{attribute}, options: #{options}")
+      label_html = custom_label_inner(attribute, options[:label], options[:label_options])
+      options.delete(:label)
+      options.delete(:label_options)
+      inner = super(attribute, options, checked_value, unchecked_value) + label_html + error_and_hint(attribute, options)
+      content_tag(:div, inner, 'class' => 'complex_label')      
     end
 
     def radio_button(attribute, tag_value, options = {})
@@ -53,6 +54,7 @@ module FoundationRailsHelper
     end
 
     def select(attribute, choices, options = {}, html_options = {})
+#      Rails.logger.info("select attribute: #{attribute}, options: #{options}, html_options: #{html_options}")
       field attribute, html_options do |html_options|
         html_options[:autocomplete] ||= :off
         super(attribute, choices, options, html_options)
@@ -84,28 +86,54 @@ module FoundationRailsHelper
     end
 
     def custom_label(attribute, text, options, &block)
+      inner = custom_label_inner(attribute, text, options, &block)
+      content_tag(:div, inner, 'class' => 'complex_label')      
+    end
+
+    def custom_label_inner(attribute, text, options, &block)
+#      Rails.logger.info("custom_label object_name: #{object_name}, attribute: #{attribute}, text: #{text}, options: #{options}")
+      
       if text == false
         text = ""
       elsif text.nil?
         text = object.class.human_attribute_name(attribute)
       end
       text = block.call.html_safe + text if block_given?
+
+      # add error class?
       options ||= {}
       options[:class] ||= ""
       options[:class] += " error" if has_error?(attribute)
-      html = label(attribute, text, options)
-      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
-      html
+
+      # add tooltip?
+      unless options[:no_tip]
+        tip_plc_cls = options[:tip_plc_cls] || 'tip-right'
+        tip_title = options[:tip_title] || I18n.t("tips.#{object_name}.#{attribute}")
+        options[:class] += " has-tip #{tip_plc_cls}"
+        options[:title] = tip_title
+        options[:data] = { tooltip: '' }
+        
+        options.delete :with_tip
+        options.delete :tip_plc_cls
+        options.delete :tip_title
+      end
+
+      # render label in div with optional help blurb
+      help_text = options.delete :help
+      inner = label(attribute, text, options)
+      inner += content_tag(:span, help_text, 'class' => 'help') if help_text
+#      Rails.logger.info("custom_label_inner html: #{inner}")
+      inner
     end
 
     def error_and_hint(attribute, options = {})
       html = ""
-#      html += content_tag(:span, options[:hint], :class => :hint) if options[:hint]
       html += error_for(attribute, options) || ""
       html.html_safe
     end
 
     def field(attribute, options, &block)
+#      Rails.logger.info("field attribute: #{attribute}, options: #{options}")      
       html = ''.html_safe
       html = custom_label(attribute, options[:label], options[:label_options]) if false != options[:label]
       options[:class] ||= ""
