@@ -1,3 +1,3 @@
 module FoundationRailsHelper
-  VERSION = "0.4a"
+  VERSION = "0.4b"
 end
